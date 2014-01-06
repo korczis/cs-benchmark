@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "calls-benchmark", "calls-benchmark\calls-benchmark.csproj", "{FA408648-3860-4999-B1AB-4B459D9B914E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FA408648-3860-4999-B1AB-4B459D9B914E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA408648-3860-4999-B1AB-4B459D9B914E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FA408648-3860-4999-B1AB-4B459D9B914E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FA408648-3860-4999-B1AB-4B459D9B914E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
