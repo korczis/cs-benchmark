@@ -20,127 +20,174 @@
  THE SOFTWARE.
  */
 
+using System;
+using System.Diagnostics;
+using System.Reflection;
+
 namespace cs_calls_benchmark
 {
-    using System;
-    using System.Diagnostics;
-    using System.Reflection;
-
     public class Benchmark
     {
-        private const int CYCLES = (int)1e7;
+        private const int Cycles = (int) 1e7;
 
         public int Result = 0;
 
         public Benchmark()
         {
-            this.Result = 0;
+            Result = 0;
         }
 
         public void MethodNormal()
         {
-            this.Result += 1;
+            Result += 1;
         }
 
         public virtual void MethodVirtual()
         {
-            this.Result += 1;
+            Result += 1;
         }
 
-        public void Run()
+        private double RunNormal()
         {
             var sw = new Stopwatch();
 
             sw.Restart();
-            for (int idx = 0; idx < CYCLES; ++idx)
+            for (int idx = 0; idx < Cycles; ++idx)
             {
                 MethodNormal();
             }
-            sw.Stop();
-            double normal_time = sw.ElapsedMilliseconds*0.001;
-            PrintInfo("NORMAL", normal_time, normal_time);
 
+            sw.Stop();
+            double res = sw.ElapsedMilliseconds*0.001;
+
+            PrintInfo("NORMAL", res, res);
+
+            return res;
+        }
+
+        private double RunVirtual(double referenceTime)
+        {
+            var sw = new Stopwatch();
 
             sw.Restart();
-            for (int idx = 0; idx < CYCLES; ++idx)
+            for (var idx = 0; idx < Cycles; ++idx)
             {
                 MethodVirtual();
             }
+
             sw.Stop();
-            PrintInfo("VIRTUAL", sw.ElapsedMilliseconds*0.001, normal_time);
+            var res = sw.ElapsedMilliseconds*0.001;
 
+            PrintInfo("VIRTUAL", res, referenceTime);
+            return res;
+        }
 
-            Action lambda = () => { this.Result += 1; };
+        public double RunLambda(double referenceTime)
+        {
+            var sw = new Stopwatch();
+
+            Action lambda = () => { Result += 1; };
 
             sw.Restart();
-            for (int idx = 0; idx < CYCLES; ++idx)
+            for (int idx = 0; idx < Cycles; ++idx)
             {
                 lambda();
             }
+
             sw.Stop();
-            PrintInfo("LAMBDA", sw.ElapsedMilliseconds*0.001, normal_time);
+            var res = sw.ElapsedMilliseconds * 0.001;
 
+            PrintInfo("LAMBDA", res, referenceTime);
+            return res;
+        }
 
-            Action direct_delegate = MethodNormal;
+        public double RunDirectDelegate(double referenceTime)
+        {
+            var sw = new Stopwatch();
+
+            Action directDelegate = MethodNormal;
             sw.Restart();
-            for (int idx = 0; idx < CYCLES; ++idx)
+            for (var idx = 0; idx < Cycles; ++idx)
             {
-                direct_delegate();
+                directDelegate();
             }
+
             sw.Stop();
-            PrintInfo("DIRECT DELEGATE", sw.ElapsedMilliseconds*0.001, normal_time);
+            var res = sw.ElapsedMilliseconds * 0.001;
 
+            PrintInfo("DIRECT DELEGATE", res, referenceTime);
+            return res;
+        }
 
-            Action reflect_action = GetAction("MethodNormal");
+        public void RunSystemAction(double referenceTime)
+        {
+            var sw = new Stopwatch();
+
+            var reflectAction = GetAction("MethodNormal");
             sw.Restart();
-            for (int idx = 0; idx < CYCLES; ++idx)
+            for (var idx = 0; idx < Cycles; ++idx)
             {
-                reflect_action();
+                reflectAction();
             }
+
             sw.Stop();
-            PrintInfo("REFLECT DELEGATE (System.Action)", sw.ElapsedMilliseconds*0.001, normal_time);
+            var res = sw.ElapsedMilliseconds*0.001;
 
+            PrintInfo("REFLECT DELEGATE (System.Action)", res, referenceTime);
+        }
 
-            Delegate reflect_delegate = GetAction("MethodNormal");
+        private double RunSystemDelegate(double referenceTime)
+        {
+            var sw = new Stopwatch();
+
+            Delegate reflectDelegate = GetAction("MethodNormal");
             sw.Restart();
-            for (int idx = 0; idx < CYCLES; ++idx)
+            for (var idx = 0; idx < Cycles; ++idx)
             {
-                reflect_delegate.DynamicInvoke();
+                reflectDelegate.DynamicInvoke();
             }
-            sw.Stop();
-            PrintInfo("REFLECT DELEGATE (System.Delegate)", sw.ElapsedMilliseconds*0.001, normal_time);
 
+            var res = sw.ElapsedMilliseconds*0.001;
+            sw.Stop();
+
+            PrintInfo("REFLECT DELEGATE (System.Delegate)", res, referenceTime);
+            return res;
+        }
+
+        public double RunInvokeAction(double referenceTime)
+        {
+            var sw = new Stopwatch();
 
             MethodInfo method = GetMethod("MethodNormal");
             sw.Restart();
-            for (int idx = 0; idx < CYCLES; ++idx)
+            for (int idx = 0; idx < Cycles; ++idx)
             {
                 method.Invoke(this, null);
             }
+
             sw.Stop();
-            PrintInfo("REFLECT INVOKE", sw.ElapsedMilliseconds*0.001, normal_time);
+            double res = sw.ElapsedMilliseconds*0.001;
 
-
-            /*
-            sw.Restart();
-            for (int idx = 0; idx < CYCLES; ++idx)
-            {
-                SendMessage("Normal");
-            }
-            sw.Stop();
-            PrintInfo("SEND MESSAGE", sw.ElapsedMilliseconds * 0.001, normal_time);
-
-
-            sw.Restart();
-            for (int idx = 0; idx < CYCLES; ++idx)
-            {
-                BroadcastMessage("Normal");
-            }
-            sw.Stop();
-            PrintInfo("BROADCAST MESSAGE", sw.ElapsedMilliseconds * 0.001, normal_time);
-            */
+            PrintInfo("REFLECT INVOKE", res, referenceTime);
+            return res;
         }
 
+        public void Run()
+        {
+            var referenceTime = RunNormal();
+
+            RunVirtual(referenceTime);
+
+            RunLambda(referenceTime);
+
+            RunDirectDelegate(referenceTime);
+
+            RunSystemAction(referenceTime);
+
+            RunSystemDelegate(referenceTime);
+
+            RunInvokeAction(referenceTime);
+        }
 
         private Action GetAction(string method)
         {
@@ -154,14 +201,14 @@ namespace cs_calls_benchmark
             return GetType().GetMethod(method, flags);
         }
 
-        private void PrintInfo(string name, double duration, double reference)
+        private static void PrintInfo(string name, double duration, double reference)
         {
             var lines = new[]
                 {
                     name,
                     "::",
                     string.Format("{0:0.0000}s", duration),
-                    string.Format("({0:0.00}mil. calls/sec)", (CYCLES/duration)/1000000),
+                    string.Format("({0:0.00}mil. calls/sec)", (Cycles/duration)/1000000),
                     string.Format("({0:0.0}%)", (duration/reference)*100)
                 };
 
