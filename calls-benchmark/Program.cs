@@ -20,28 +20,43 @@
  THE SOFTWARE.
  */
 
-using System;
-using System.Diagnostics;
-using System.Reflection;
-
 namespace cs_calls_benchmark
 {
+    using System;
+    using System.Diagnostics;
+    using System.Reflection;
+
     public class Benchmark
     {
+        /// <summary>
+        /// Count of iterations to perform
+        /// </summary>
         private const int Cycles = (int) 1e7;
 
+        /// <summary>
+        /// Counter to prevent optimization
+        /// </summary>
         public int Result = 0;
-
+        
+        /// <summary>
+        /// Constructor
+        /// </summary>
         public Benchmark()
         {
             Result = 0;
         }
 
+        /// <summary>
+        /// Simple non-virtual benchmark method
+        /// </summary>
         public void MethodNormal()
         {
             Result += 1;
         }
 
+        /// <summary>
+        /// Virtual benchmark method
+        /// </summary>
         public virtual void MethodVirtual()
         {
             Result += 1;
@@ -52,13 +67,13 @@ namespace cs_calls_benchmark
             var sw = new Stopwatch();
 
             sw.Restart();
-            for (int idx = 0; idx < Cycles; ++idx)
+            for (var idx = 0; idx < Cycles; ++idx)
             {
                 MethodNormal();
             }
 
             sw.Stop();
-            double res = sw.ElapsedMilliseconds*0.001;
+            var res = sw.ElapsedMilliseconds*0.001;
 
             PrintInfo("NORMAL", res, res);
 
@@ -89,7 +104,7 @@ namespace cs_calls_benchmark
             Action lambda = () => { Result += 1; };
 
             sw.Restart();
-            for (int idx = 0; idx < Cycles; ++idx)
+            for (var idx = 0; idx < Cycles; ++idx)
             {
                 lambda();
             }
@@ -158,15 +173,15 @@ namespace cs_calls_benchmark
         {
             var sw = new Stopwatch();
 
-            MethodInfo method = GetMethod("MethodNormal");
+            var method = GetMethod("MethodNormal");
             sw.Restart();
-            for (int idx = 0; idx < Cycles; ++idx)
+            for (var idx = 0; idx < Cycles; ++idx)
             {
                 method.Invoke(this, null);
             }
 
             sw.Stop();
-            double res = sw.ElapsedMilliseconds*0.001;
+            var res = sw.ElapsedMilliseconds*0.001;
 
             PrintInfo("REFLECT INVOKE", res, referenceTime);
             return res;
