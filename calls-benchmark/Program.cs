@@ -134,7 +134,7 @@ namespace cs_calls_benchmark
             return res;
         }
 
-        public void RunSystemAction(double referenceTime)
+        public double RunSystemAction(double referenceTime)
         {
             var sw = new Stopwatch();
 
@@ -149,6 +149,8 @@ namespace cs_calls_benchmark
             var res = sw.ElapsedMilliseconds*0.001;
 
             PrintInfo("REFLECT DELEGATE (System.Action)", res, referenceTime);
+
+            return res;
         }
 
         private double RunSystemDelegate(double referenceTime)
@@ -187,21 +189,27 @@ namespace cs_calls_benchmark
             return res;
         }
 
-        public void Run()
+        public double Run()
         {
+            var res = 0.0;
+
             var referenceTime = RunNormal();
 
-            RunVirtual(referenceTime);
+            res += referenceTime;
 
-            RunLambda(referenceTime);
+            res += RunVirtual(referenceTime);
 
-            RunDirectDelegate(referenceTime);
+            res += RunLambda(referenceTime);
 
-            RunSystemAction(referenceTime);
+            res += RunDirectDelegate(referenceTime);
 
-            RunSystemDelegate(referenceTime);
+            res += RunSystemAction(referenceTime);
 
-            RunInvokeAction(referenceTime);
+            res += RunSystemDelegate(referenceTime);
+
+            res += RunInvokeAction(referenceTime);
+
+            return res;
         }
 
         private Action GetAction(string method)
@@ -240,9 +248,9 @@ namespace cs_calls_benchmark
         {
             var instance = new Benchmark();
 
-            instance.Run();
+            var res = instance.Run();
 
-            Console.WriteLine("Result: {0}", instance.Result);
+            Console.WriteLine("Result: {0} => {1}", instance.Result, res);
 
             return 0;
         }
