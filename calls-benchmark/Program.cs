@@ -46,6 +46,19 @@ namespace cs_calls_benchmark
             Result = 0;
         }
 
+        public static double Measure(Action func)
+        {
+            var sw = new Stopwatch();
+
+            sw.Start();
+
+            func.Invoke();
+
+            sw.Stop();
+
+            return sw.ElapsedMilliseconds*0.001;
+        }
+
         /// <summary>
         /// Simple non-virtual benchmark method
         /// </summary>
@@ -64,34 +77,27 @@ namespace cs_calls_benchmark
 
         private double RunNormal()
         {
-            var sw = new Stopwatch();
-
-            sw.Restart();
-            for (var idx = 0; idx < Cycles; ++idx)
-            {
-                MethodNormal();
-            }
-
-            sw.Stop();
-            var res = sw.ElapsedMilliseconds*0.001;
+            var res = Measure(() =>
+                {
+                    for (var idx = 0; idx < Cycles; ++idx)
+                    {
+                        MethodNormal();
+                    }
+                });
 
             PrintInfo("NORMAL", res, res);
-
             return res;
         }
 
         private double RunVirtual(double referenceTime)
         {
-            var sw = new Stopwatch();
-
-            sw.Restart();
-            for (var idx = 0; idx < Cycles; ++idx)
-            {
-                MethodVirtual();
-            }
-
-            sw.Stop();
-            var res = sw.ElapsedMilliseconds*0.001;
+            var res = Measure(() =>
+                {
+                    for (var idx = 0; idx < Cycles; ++idx)
+                    {
+                        MethodVirtual();
+                    }
+                });
 
             PrintInfo("VIRTUAL", res, referenceTime);
             return res;
@@ -99,18 +105,15 @@ namespace cs_calls_benchmark
 
         public double RunLambda(double referenceTime)
         {
-            var sw = new Stopwatch();
-
             Action lambda = () => { Result += 1; };
 
-            sw.Restart();
-            for (var idx = 0; idx < Cycles; ++idx)
-            {
-                lambda();
-            }
-
-            sw.Stop();
-            var res = sw.ElapsedMilliseconds * 0.001;
+            var res = Measure(() =>
+                {
+                    for (var idx = 0; idx < Cycles; ++idx)
+                    {
+                        lambda();
+                    }
+                });
 
             PrintInfo("LAMBDA", res, referenceTime);
             return res;
@@ -118,17 +121,17 @@ namespace cs_calls_benchmark
 
         public double RunDirectDelegate(double referenceTime)
         {
-            var sw = new Stopwatch();
-
+            
             Action directDelegate = MethodNormal;
-            sw.Restart();
-            for (var idx = 0; idx < Cycles; ++idx)
-            {
-                directDelegate();
-            }
 
-            sw.Stop();
-            var res = sw.ElapsedMilliseconds * 0.001;
+            var res = Measure(() =>
+                {
+                    for (var idx = 0; idx < Cycles; ++idx)
+                    {
+                        directDelegate();
+                    }
+
+                });
 
             PrintInfo("DIRECT DELEGATE", res, referenceTime);
             return res;
@@ -136,36 +139,33 @@ namespace cs_calls_benchmark
 
         public double RunSystemAction(double referenceTime)
         {
-            var sw = new Stopwatch();
-
             var reflectAction = GetAction("MethodNormal");
-            sw.Restart();
-            for (var idx = 0; idx < Cycles; ++idx)
-            {
-                reflectAction();
-            }
 
-            sw.Stop();
-            var res = sw.ElapsedMilliseconds*0.001;
+            var res = Measure(() =>
+                {
+                    for (var idx = 0; idx < Cycles; ++idx)
+                    {
+                        reflectAction();
+                    }
+
+                });
 
             PrintInfo("REFLECT DELEGATE (System.Action)", res, referenceTime);
-
             return res;
         }
 
         private double RunSystemDelegate(double referenceTime)
         {
-            var sw = new Stopwatch();
-
             Delegate reflectDelegate = GetAction("MethodNormal");
-            sw.Restart();
-            for (var idx = 0; idx < Cycles; ++idx)
-            {
-                reflectDelegate.DynamicInvoke();
-            }
 
-            var res = sw.ElapsedMilliseconds*0.001;
-            sw.Stop();
+            var res = Measure(() =>
+                {
+                    for (var idx = 0; idx < Cycles; ++idx)
+                    {
+                        reflectDelegate.DynamicInvoke();
+                    }
+
+                });
 
             PrintInfo("REFLECT DELEGATE (System.Delegate)", res, referenceTime);
             return res;
@@ -173,17 +173,15 @@ namespace cs_calls_benchmark
 
         public double RunInvokeAction(double referenceTime)
         {
-            var sw = new Stopwatch();
-
             var method = GetMethod("MethodNormal");
-            sw.Restart();
-            for (var idx = 0; idx < Cycles; ++idx)
-            {
-                method.Invoke(this, null);
-            }
 
-            sw.Stop();
-            var res = sw.ElapsedMilliseconds*0.001;
+            var res = Measure(() =>
+                {
+                    for (var idx = 0; idx < Cycles; ++idx)
+                    {
+                        method.Invoke(this, null);
+                    }
+                });
 
             PrintInfo("REFLECT INVOKE", res, referenceTime);
             return res;
