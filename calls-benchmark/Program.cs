@@ -64,31 +64,50 @@ namespace cs_calls_benchmark
 
         public static double Measure(Action func)
         {
+            //  Create new stop watch instance ...
             var sw = new Stopwatch();
 
+            // Start stop watch instance ...
             sw.Start();
 
+            // Invoke lambda benchmark ...
             func.Invoke();
 
+            // Stop stop watches ...
             sw.Stop();
 
-            return sw.ElapsedMilliseconds*0.001;
+            // Return elapsed time in seconds ...
+            return sw.ElapsedMilliseconds * 0.001;
         }
 
         public static double MeasurePrintAndReturn(string name, Action func)
         {
-            double res = Measure(func);
+            return MeasurePrintAndReturn(name, func, null);
+        }
 
-            PrintInfo(name, res, res);
+        public static double MeasurePrintAndReturn(string name, Action func, double? referenceTime)
+        {
+            // Measure ...
+            var res = Measure(func);
 
+            var value = res;
+            if (referenceTime.HasValue)
+            {
+                value = referenceTime.Value;
+            }
+
+            // Print ..
+            PrintInfo(name, res, value);
+            
+            // And return ...
             return res;
         }
 
-        private double RunNormal()
+        public double RunNormal()
         {
             return MeasurePrintAndReturn("NORMAL", () =>
                 {
-                    for (int idx = 0; idx < Cycles; ++idx)
+                    for (var idx = 0; idx < Cycles; ++idx)
                     {
                         MethodNormal();
                     }
@@ -99,11 +118,11 @@ namespace cs_calls_benchmark
         {
             return MeasurePrintAndReturn("VIRTUAL", () =>
                 {
-                    for (int idx = 0; idx < Cycles; ++idx)
+                    for (var idx = 0; idx < Cycles; ++idx)
                     {
                         MethodVirtual();
                     }
-                });
+                }, referenceTime);
         }
 
         public double RunLambda(double referenceTime)
@@ -112,11 +131,11 @@ namespace cs_calls_benchmark
                 {
                     Action lambda = () => { Result += 1; };
 
-                    for (int idx = 0; idx < Cycles; ++idx)
+                    for (var idx = 0; idx < Cycles; ++idx)
                     {
                         lambda();
                     }
-                });
+                }, referenceTime);
         }
 
         public double RunDirectDelegate(double referenceTime)
@@ -129,53 +148,53 @@ namespace cs_calls_benchmark
                     {
                         directDelegate();
                     }
-                });
+                }, referenceTime);
         }
 
         public double RunSystemAction(double referenceTime)
         {
             return MeasurePrintAndReturn("REFLECT DELEGATE (System.Action)", () =>
                 {
-                    Action reflectAction = GetAction("MethodNormal");
+                    var reflectAction = GetAction("MethodNormal");
 
-                    for (int idx = 0; idx < Cycles; ++idx)
+                    for (var idx = 0; idx < Cycles; ++idx)
                     {
                         reflectAction();
                     }
-                });
+                }, referenceTime);
         }
 
-        private double RunSystemDelegate(double referenceTime)
+        public double RunSystemDelegate(double referenceTime)
         {
             return MeasurePrintAndReturn("REFLECT DELEGATE (System.Delegate)", () =>
                 {
                     Delegate reflectDelegate = GetAction("MethodNormal");
 
-                    for (int idx = 0; idx < Cycles; ++idx)
+                    for (var idx = 0; idx < Cycles; ++idx)
                     {
                         reflectDelegate.DynamicInvoke();
                     }
-                });
+                }, referenceTime);
         }
 
         public double RunInvokeAction(double referenceTime)
         {
             return MeasurePrintAndReturn("REFLECT INVOKE", () =>
                 {
-                    MethodInfo method = GetMethod("MethodNormal");
+                    var method = GetMethod("MethodNormal");
 
-                    for (int idx = 0; idx < Cycles; ++idx)
+                    for (var idx = 0; idx < Cycles; ++idx)
                     {
                         method.Invoke(this, null);
                     }
-                });
+                }, referenceTime);
         }
 
         public double Run()
         {
-            double res = 0.0;
+            var res = 0.0;
 
-            double referenceTime = RunNormal();
+            var referenceTime = RunNormal();
 
             res += referenceTime;
 
@@ -217,7 +236,7 @@ namespace cs_calls_benchmark
                     string.Format("({0:0.0}%)", (duration/reference)*100)
                 };
 
-            string msg = string.Join(" ", lines);
+            var msg = string.Join(" ", lines);
 
             Debug.WriteLine(msg);
             Console.WriteLine(msg);
@@ -230,7 +249,7 @@ namespace cs_calls_benchmark
         {
             var instance = new Benchmark();
 
-            double res = instance.Run();
+            var res = instance.Run();
 
             Console.WriteLine("Result: {0} => {1}", instance.Result, res);
 
