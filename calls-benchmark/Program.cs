@@ -22,6 +22,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.Reflection;
 
 namespace cs_calls_benchmark
@@ -87,6 +88,8 @@ namespace cs_calls_benchmark
 
         public static double MeasurePrintAndReturn(string name, Action func, double? referenceTime)
         {
+            GC.Collect();
+
             // Measure ...
             var res = Measure(func);
 
@@ -103,7 +106,7 @@ namespace cs_calls_benchmark
             return res;
         }
 
-        public double RunNormal()
+        public double RunNormal(double? referenceTime)
         {
             return MeasurePrintAndReturn("NORMAL", () =>
                 {
@@ -111,10 +114,10 @@ namespace cs_calls_benchmark
                     {
                         MethodNormal();
                     }
-                });
+                }, referenceTime);
         }
 
-        public double RunVirtual(double referenceTime)
+        public double RunVirtual(double? referenceTime)
         {
             return MeasurePrintAndReturn("VIRTUAL", () =>
                 {
@@ -125,7 +128,7 @@ namespace cs_calls_benchmark
                 }, referenceTime);
         }
 
-        public double RunLambda(double referenceTime)
+        public double RunLambda(double? referenceTime)
         {
             return MeasurePrintAndReturn("LAMBDA", () =>
                 {
@@ -138,7 +141,7 @@ namespace cs_calls_benchmark
                 }, referenceTime);
         }
 
-        public double RunDirectDelegate(double referenceTime)
+        public double RunDirectDelegate(double? referenceTime)
         {
             return MeasurePrintAndReturn("DIRECT DELEGATE", () =>
                 {
@@ -151,7 +154,7 @@ namespace cs_calls_benchmark
                 }, referenceTime);
         }
 
-        public double RunSystemAction(double referenceTime)
+        public double RunSystemAction(double? referenceTime)
         {
             return MeasurePrintAndReturn("REFLECT DELEGATE (System.Action)", () =>
                 {
@@ -164,7 +167,7 @@ namespace cs_calls_benchmark
                 }, referenceTime);
         }
 
-        public double RunSystemDelegate(double referenceTime)
+        public double RunSystemDelegate(double? referenceTime)
         {
             return MeasurePrintAndReturn("REFLECT DELEGATE (System.Delegate)", () =>
                 {
@@ -177,7 +180,7 @@ namespace cs_calls_benchmark
                 }, referenceTime);
         }
 
-        public double RunInvokeAction(double referenceTime)
+        public double RunInvokeAction(double? referenceTime)
         {
             return MeasurePrintAndReturn("REFLECT INVOKE", () =>
                 {
@@ -190,25 +193,51 @@ namespace cs_calls_benchmark
                 }, referenceTime);
         }
 
+        public static int WarmUp()
+        {
+            var res = 0;
+
+            // Log("Engine is warming up ...");
+
+            var sw = new Stopwatch();
+            sw.Start();
+            while ((sw.ElapsedMilliseconds * 0.001) < 5)
+            {
+                res = new Random().Next(Cycles);
+            }
+            sw.Stop();
+
+            // Log("Done ...");
+
+            return res;
+        }
+
         public double Run()
         {
             var res = 0.0;
 
-            var referenceTime = RunNormal();
+            var iterations = 0;
 
-            res += referenceTime;
+            while (iterations++ < 10)
+            {
+                Log(string.Format("Round #{0}", iterations));
 
-            res += RunVirtual(referenceTime);
+                var referenceTime = res = RunNormal(null);
 
-            res += RunLambda(referenceTime);
+                res += RunVirtual(referenceTime);
 
-            res += RunDirectDelegate(referenceTime);
+                res += RunLambda(referenceTime);
 
-            res += RunSystemAction(referenceTime);
+                res += RunDirectDelegate(referenceTime);
 
-            res += RunSystemDelegate(referenceTime);
+                res += RunSystemAction(referenceTime);
 
-            res += RunInvokeAction(referenceTime);
+                res += RunSystemDelegate(referenceTime);
+
+                res += RunInvokeAction(referenceTime);
+
+                Log(string.Empty);
+            }
 
             return res;
         }
@@ -238,6 +267,21 @@ namespace cs_calls_benchmark
             return GetType().GetMethod(method, flags);
         }
 
+        private static void Log(string msg)
+        {
+            var ts = DateTime.UtcNow.ToString("yyyy/MM/dd hh:mm:ss", CultureInfo.InvariantCulture);
+
+            var fmtMessage = string.Format("[{0}] {1}", ts, msg);
+
+            // Write them to the debug console ...
+            Debug.WriteLine(fmtMessage);
+
+            // Write them to the regular command-line console
+            Console.WriteLine(fmtMessage);
+
+            // And now just be fine ;-)
+        }
+
         /// <summary>
         /// Print brief named info about execution time(s)
         /// </summary>
@@ -261,13 +305,7 @@ namespace cs_calls_benchmark
             // Joins them to the message
             var msg = string.Join(" ", lines);
 
-            // Write them to the debug console ...
-            Debug.WriteLine(msg);
-
-            // Write them to the regular command-line console
-            Console.WriteLine(msg);
-
-            // And now just be fine ;-)
+            Log(msg);
         }
     }
 
@@ -285,6 +323,8 @@ namespace cs_calls_benchmark
         {
             // Create instance of benchmark class
             var instance = new Benchmark();
+
+            Benchmark.WarmUp();
 
             // Run that instance 
             var res = instance.Run();
