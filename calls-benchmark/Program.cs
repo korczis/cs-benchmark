@@ -144,7 +144,7 @@ namespace cs_calls_benchmark
                 {
                     Action directDelegate = MethodNormal;
 
-                    for (int idx = 0; idx < Cycles; ++idx)
+                    for (var idx = 0; idx < Cycles; ++idx)
                     {
                         directDelegate();
                     }
@@ -213,20 +213,42 @@ namespace cs_calls_benchmark
             return res;
         }
 
+        /// <summary>
+        /// Get Action by name
+        /// </summary>
+        /// <param name="method">Name of the action</param>
+        /// <returns>Action itself</returns>
         private Action GetAction(string method)
         {
             return (Action) Delegate.CreateDelegate(typeof (Action), this, GetMethod(method));
         }
 
+        /// <summary>
+        /// Get Method by name
+        /// </summary>
+        /// <param name="method">Name of the method</param>
+        /// <returns>Method itseld</returns>
         private MethodInfo GetMethod(string method)
         {
+            // Some binding flags ...
             const BindingFlags flags =
                 BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
+            
+            // Return methody by name and flags ....
             return GetType().GetMethod(method, flags);
         }
 
+        /// <summary>
+        /// Print brief named info about execution time(s)
+        /// </summary>
+        /// <param name="name">Name of the main test</param>
+        /// <param name="duration">Duration of the main test</param>
+        /// <param name="reference">Duration of the refence test</param>
         private static void PrintInfo(string name, double duration, double reference)
         {
+            // TODO: Where is the NiceFormat Method, korczis?
+
+            // Construct the lines
             var lines = new[]
                 {
                     name,
@@ -236,23 +258,41 @@ namespace cs_calls_benchmark
                     string.Format("({0:0.0}%)", (duration/reference)*100)
                 };
 
+            // Joins them to the message
             var msg = string.Join(" ", lines);
 
+            // Write them to the debug console ...
             Debug.WriteLine(msg);
+
+            // Write them to the regular command-line console
             Console.WriteLine(msg);
+
+            // And now just be fine ;-)
         }
     }
 
+    /// <summary>
+    /// C# Calls Performance Benchmark Main Class
+    /// </summary>
     internal class Program
     {
+        /// <summary>
+        /// Application Entrypoint
+        /// </summary>
+        /// <param name="args">Command line arguments</param>
+        /// <returns>Return values</returns>
         private static int Main(string[] args)
         {
+            // Create instance of benchmark class
             var instance = new Benchmark();
 
+            // Run that instance 
             var res = instance.Run();
 
+            // Print results ... ( => that stuff which prevented optimizer to optimize too much)
             Console.WriteLine("Result: {0} => {1}", instance.Result, res);
 
+            // Yeah, everything is all right (EXIT_SUCCESS as we say in c/c++)
             return 0;
         }
     }
