@@ -1,4 +1,4 @@
-﻿/* 
+﻿/* 0
  Copyright, 2013, by Tomas Korcak. <korczis@gmail.com> & Vladimir Zadrazil aka Zadr007
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,30 +20,46 @@
  THE SOFTWARE.
  */
 
+using System;
+using System.Diagnostics;
+using System.Reflection;
+
 namespace cs_calls_benchmark
 {
-    using System;
-    using System.Diagnostics;
-    using System.Reflection;
-
     public class Benchmark
     {
         /// <summary>
-        /// Count of iterations to perform
+        ///     Count of iterations to perform
         /// </summary>
         private const int Cycles = (int) 1e7;
 
         /// <summary>
-        /// Counter to prevent optimization
+        ///     Counter to prevent optimization
         /// </summary>
         public int Result = 0;
-        
+
         /// <summary>
-        /// Constructor
+        ///     Constructor
         /// </summary>
         public Benchmark()
         {
             Result = 0;
+        }
+
+        /// <summary>
+        ///     Simple non-virtual benchmark method
+        /// </summary>
+        public void MethodNormal()
+        {
+            Result += 1;
+        }
+
+        /// <summary>
+        ///     Virtual benchmark method
+        /// </summary>
+        public virtual void MethodVirtual()
+        {
+            Result += 1;
         }
 
         public static double Measure(Action func)
@@ -59,139 +75,107 @@ namespace cs_calls_benchmark
             return sw.ElapsedMilliseconds*0.001;
         }
 
-        /// <summary>
-        /// Simple non-virtual benchmark method
-        /// </summary>
-        public void MethodNormal()
+        public static double MeasurePrintAndReturn(string name, Action func)
         {
-            Result += 1;
-        }
+            double res = Measure(func);
 
-        /// <summary>
-        /// Virtual benchmark method
-        /// </summary>
-        public virtual void MethodVirtual()
-        {
-            Result += 1;
+            PrintInfo(name, res, res);
+
+            return res;
         }
 
         private double RunNormal()
         {
-            var res = Measure(() =>
+            return MeasurePrintAndReturn("NORMAL", () =>
                 {
-                    for (var idx = 0; idx < Cycles; ++idx)
+                    for (int idx = 0; idx < Cycles; ++idx)
                     {
                         MethodNormal();
                     }
                 });
-
-            PrintInfo("NORMAL", res, res);
-            return res;
         }
 
-        private double RunVirtual(double referenceTime)
+        public double RunVirtual(double referenceTime)
         {
-            var res = Measure(() =>
+            return MeasurePrintAndReturn("VIRTUAL", () =>
                 {
-                    for (var idx = 0; idx < Cycles; ++idx)
+                    for (int idx = 0; idx < Cycles; ++idx)
                     {
                         MethodVirtual();
                     }
                 });
-
-            PrintInfo("VIRTUAL", res, referenceTime);
-            return res;
         }
 
         public double RunLambda(double referenceTime)
         {
-            Action lambda = () => { Result += 1; };
-
-            var res = Measure(() =>
+            return MeasurePrintAndReturn("LAMBDA", () =>
                 {
-                    for (var idx = 0; idx < Cycles; ++idx)
+                    Action lambda = () => { Result += 1; };
+
+                    for (int idx = 0; idx < Cycles; ++idx)
                     {
                         lambda();
                     }
                 });
-
-            PrintInfo("LAMBDA", res, referenceTime);
-            return res;
         }
 
         public double RunDirectDelegate(double referenceTime)
         {
-            
-            Action directDelegate = MethodNormal;
-
-            var res = Measure(() =>
+            return MeasurePrintAndReturn("DIRECT DELEGATE", () =>
                 {
-                    for (var idx = 0; idx < Cycles; ++idx)
+                    Action directDelegate = MethodNormal;
+
+                    for (int idx = 0; idx < Cycles; ++idx)
                     {
                         directDelegate();
                     }
-
                 });
-
-            PrintInfo("DIRECT DELEGATE", res, referenceTime);
-            return res;
         }
 
         public double RunSystemAction(double referenceTime)
         {
-            var reflectAction = GetAction("MethodNormal");
-
-            var res = Measure(() =>
+            return MeasurePrintAndReturn("REFLECT DELEGATE (System.Action)", () =>
                 {
-                    for (var idx = 0; idx < Cycles; ++idx)
+                    Action reflectAction = GetAction("MethodNormal");
+
+                    for (int idx = 0; idx < Cycles; ++idx)
                     {
                         reflectAction();
                     }
-
                 });
-
-            PrintInfo("REFLECT DELEGATE (System.Action)", res, referenceTime);
-            return res;
         }
 
         private double RunSystemDelegate(double referenceTime)
         {
-            Delegate reflectDelegate = GetAction("MethodNormal");
-
-            var res = Measure(() =>
+            return MeasurePrintAndReturn("REFLECT DELEGATE (System.Delegate)", () =>
                 {
-                    for (var idx = 0; idx < Cycles; ++idx)
+                    Delegate reflectDelegate = GetAction("MethodNormal");
+
+                    for (int idx = 0; idx < Cycles; ++idx)
                     {
                         reflectDelegate.DynamicInvoke();
                     }
-
                 });
-
-            PrintInfo("REFLECT DELEGATE (System.Delegate)", res, referenceTime);
-            return res;
         }
 
         public double RunInvokeAction(double referenceTime)
         {
-            var method = GetMethod("MethodNormal");
-
-            var res = Measure(() =>
+            return MeasurePrintAndReturn("REFLECT INVOKE", () =>
                 {
-                    for (var idx = 0; idx < Cycles; ++idx)
+                    MethodInfo method = GetMethod("MethodNormal");
+
+                    for (int idx = 0; idx < Cycles; ++idx)
                     {
                         method.Invoke(this, null);
                     }
                 });
-
-            PrintInfo("REFLECT INVOKE", res, referenceTime);
-            return res;
         }
 
         public double Run()
         {
-            var res = 0.0;
+            double res = 0.0;
 
-            var referenceTime = RunNormal();
+            double referenceTime = RunNormal();
 
             res += referenceTime;
 
@@ -233,7 +217,7 @@ namespace cs_calls_benchmark
                     string.Format("({0:0.0}%)", (duration/reference)*100)
                 };
 
-            var msg = string.Join(" ", lines);
+            string msg = string.Join(" ", lines);
 
             Debug.WriteLine(msg);
             Console.WriteLine(msg);
@@ -246,7 +230,7 @@ namespace cs_calls_benchmark
         {
             var instance = new Benchmark();
 
-            var res = instance.Run();
+            double res = instance.Run();
 
             Console.WriteLine("Result: {0} => {1}", instance.Result, res);
 
